@@ -1,7 +1,12 @@
 import os
+import sys
 import sqlite3
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+
+# Let the backend import your custom algorithm from the pipeline folder
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "pipeline"))
+from algorithms import top_k_zones
 
 DB = os.path.join(os.path.dirname(__file__), "..", "db", "taxi.db")
 
@@ -91,6 +96,19 @@ def zones():
     return jsonify(query("""SELECT z.location_id, z.zone_name, b.name AS borough
                             FROM zone z JOIN borough b ON z.borough_id = b.borough_id
                             ORDER BY z.location_id"""))
+
+
+@app.get("/api/top-zones")
+def top_zones():
+    k = min(max(int(request.args.get("k", 10)), 1), 265)
+    clause, params = build_filters(request.args)
+    rows = query(f"SELECT pu_zone_id, COUNT(*) AS c FROM trip{clause} GROUP BY pu_zone_id", params)
+    names = {z["location_id"]: z["zone_name"] or "Unknown"
+             for z in query("SELECT location_id, zone_name FROM zone")}
+    counts = [(r["pu_zone_id"], r["c"]) for r in rows]
+    # Your own min-heap does the ranking (no sorted(), no heapq)
+    return jsonify([{"zone_id": z, "zone_name": names[z], "trips": c}
+                    for c, z in top_k_zones(counts, k)])
 
 
 if __name__ == "__main__":
