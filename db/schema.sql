@@ -10,6 +10,15 @@ CREATE TABLE zone (
     service_zone TEXT
 );
 
+-- One row per zone that has a boundary polygon (zones 264/265 have none).
+-- geometry is a GeoJSON MultiPolygon stored as text; the centroid is used for map labels.
+CREATE TABLE zone_boundary (
+    location_id INTEGER PRIMARY KEY REFERENCES zone(location_id),
+    geometry TEXT NOT NULL,
+    centroid_lat REAL NOT NULL,
+    centroid_lng REAL NOT NULL
+);
+
 CREATE TABLE payment_type (
     payment_type_id INTEGER PRIMARY KEY,
     label TEXT NOT NULL

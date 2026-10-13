@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import sqlite3
@@ -96,6 +97,54 @@ def zones():
     return jsonify(query("""SELECT z.location_id, z.zone_name, b.name AS borough
                             FROM zone z JOIN borough b ON z.borough_id = b.borough_id
                             ORDER BY z.location_id"""))
+
+
+# Metrics the map can colour zones by. The SQL text comes from this fixed dictionary
+# (never from the URL), so a user cannot inject anything through the metric parameter.
+ZONE_METRICS = {
+    "pickups":      ("pu_zone_id", "COUNT(*)"),
+    "dropoffs":     ("do_zone_id", "COUNT(*)"),
+    "avg_fare":     ("pu_zone_id", "ROUND(AVG(fare), 2)"),
+    "avg_distance": ("pu_zone_id", "ROUND(AVG(distance), 2)"),
+    "avg_tip_pct":  ("pu_zone_id", "ROUND(AVG(tip_pct), 1)"),
+}
+
+
+@app.get("/api/zones/geojson")
+def zones_geojson():
+    """Zone boundaries as a GeoJSON FeatureCollection (static, so the map loads it once)."""
+    rows = query("""SELECT z.location_id, z.zone_name, b.name AS borough,
+                           zb.geometry, zb.centroid_lat, zb.centroid_lng
+                    FROM zone_boundary zb
+                    JOIN zone z ON zb.location_id = z.location_id
+                    JOIN borough b ON z.borough_id = b.borough_id
+                    ORDER BY z.location_id""")
+    features = [{
+        "type": "Feature",
+        "id": r["location_id"],
+        "properties": {"location_id": r["location_id"], "zone_name": r["zone_name"],
+                       "borough": r["borough"], "centroid_lat": r["centroid_lat"],
+                       "centroid_lng": r["centroid_lng"]},
+        "geometry": json.loads(r["geometry"]),
+    } for r in rows]
+    return jsonify({"type": "FeatureCollection", "features": features})
+
+
+@app.get("/api/stats/by-zone")
+def by_zone():
+    """One number per zone (for the map), honouring the same filters as every other endpoint.
+    ?metric=pickups|dropoffs|avg_fare|avg_distance|avg_tip_pct  &min_trips=N"""
+    metric = request.args.get("metric", "pickups")
+    if metric not in ZONE_METRICS:
+        return jsonify({"error": f"metric must be one of {sorted(ZONE_METRICS)}"}), 400
+    group_col, expr = ZONE_METRICS[metric]
+    min_trips = max(int(request.args.get("min_trips", 1)), 1)   # hides zones with too little data
+    clause, params = build_filters(request.args)
+    sql = f"""SELECT {group_col} AS zone_id, {expr} AS value, COUNT(*) AS trips
+              FROM trip{clause}
+              GROUP BY {group_col}
+              HAVING COUNT(*) >= ?"""
+    return jsonify({"metric": metric, "zones": query(sql, params + [min_trips])})
 
 
 @app.get("/api/top-zones")
