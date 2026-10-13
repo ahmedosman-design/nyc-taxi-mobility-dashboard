@@ -1,0 +1,14 @@
+reason,rows,pct_of_raw
+passenger count not 1-6,115587,1.5074
+distance zero or negative,48691,0.635
+duration over 6 hours,20463,0.2669
+fare per mile over $100,10839,0.1414
+fare zero or negative,6567,0.0856
+dropoff not after pickup,6291,0.082
+distance under 0.1 miles,5871,0.0766
+speed over 80 mph,5462,0.0712
+pickup outside January 2019,537,0.007
+tip over 3x fare,475,0.0062
+invalid rate code,91,0.0012
+distance over 100 miles,31,0.0004
+fare over $500,4,0.0001
