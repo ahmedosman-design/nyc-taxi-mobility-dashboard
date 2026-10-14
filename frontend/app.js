@@ -67,15 +67,8 @@ function filterParams() {
   add("min_distance", "f-min-distance");
   add("max_distance", "f-max-distance");
   add("max_fare", "f-max-fare");
-
-  // The API treats "end" as exclusive, so move the picked date forward one day
-  // to make the chosen end date inclusive.
-  const end = $("f-end").value;
-  if (end) {
-    const d = new Date(end + "T00:00:00Z");
-    d.setUTCDate(d.getUTCDate() + 1);
-    p.set("end", d.toISOString().slice(0, 10));
-  }
+  // The API makes "end" inclusive itself (it adds a day), so send the picked date as is.
+  add("end", "f-end");
   return p;
 }
 

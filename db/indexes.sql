@@ -1,3 +1,9 @@
-CREATE INDEX idx_trip_fare     ON trip(fare);           -- trip table sort by fare
-CREATE INDEX idx_trip_distance ON trip(distance);       -- sort by distance and distance filters
-CREATE INDEX idx_trip_duration ON trip(duration_min);   -- sort by duration
+   CREATE INDEX IF NOT EXISTS idx_trip_pickup_dt ON trip(pickup_dt);
+   CREATE INDEX IF NOT EXISTS idx_trip_pu_zone   ON trip(pu_zone_id);
+   CREATE INDEX IF NOT EXISTS idx_trip_do_zone   ON trip(do_zone_id);
+   CREATE INDEX IF NOT EXISTS idx_trip_hour      ON trip(pickup_hour);
+   CREATE INDEX IF NOT EXISTS idx_trip_payment   ON trip(payment_type_id);
+   CREATE INDEX IF NOT EXISTS idx_zone_borough   ON zone(borough_id);
+   CREATE INDEX IF NOT EXISTS idx_trip_fare      ON trip(fare);
+   CREATE INDEX IF NOT EXISTS idx_trip_distance  ON trip(distance);
+   CREATE INDEX IF NOT EXISTS idx_trip_duration  ON trip(duration_min);
