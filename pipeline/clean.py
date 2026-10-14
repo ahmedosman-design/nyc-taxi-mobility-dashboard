@@ -1,10 +1,9 @@
 import numpy as np
 import pandas as pd
-
-RAW = "data/yellow_tripdata_2019-01.csv"
+from raw_data import load_raw_trips
 
 zones = pd.read_csv("data/taxi_zone_lookup.csv")
-df = pd.read_csv(RAW, parse_dates=["tpep_pickup_datetime", "tpep_dropoff_datetime"])
+df = load_raw_trips()          # reads the official .parquet file (CSV only as a fallback)
 rows_in = len(df)
 
 # Duration and speed are needed by the rules, so compute them first

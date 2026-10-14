@@ -1,9 +1,7 @@
 import pandas as pd
+from raw_data import load_raw_trips
 
-df = pd.read_csv(
-    "data/yellow_tripdata_2019-01.csv",
-    parse_dates=["tpep_pickup_datetime", "tpep_dropoff_datetime"],
-)
+df = load_raw_trips()          # reads the official .parquet file (CSV only as a fallback)
 
 print(df.shape)                  # rows, columns
 print(df.dtypes)                 # type of each column

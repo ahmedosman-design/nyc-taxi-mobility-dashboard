@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import pandas as pd
+from spatial import load_zone_geometries   # reads the taxi zone boundary file
 
 DB = "db/taxi.db"
 if os.path.exists(DB):
@@ -22,6 +23,17 @@ z = zones.merge(boroughs, left_on="Borough", right_on="name")
 z = z.rename(columns={"LocationID": "location_id", "Zone": "zone_name"})
 z[["location_id", "zone_name", "borough_id", "service_zone"]] \
     .to_sql("zone", conn, if_exists="append", index=False)
+
+# ---- Zone boundaries (spatial metadata) ----
+geoms = load_zone_geometries()
+known_ids = set(z["location_id"])
+rows = [(zid, g, lat, lng) for zid, (g, lat, lng) in sorted(geoms.items()) if zid in known_ids]
+skipped = len(geoms) - len(rows)
+conn.executemany(
+    "INSERT INTO zone_boundary (location_id, geometry, centroid_lat, centroid_lng) VALUES (?, ?, ?, ?)",
+    rows)
+print(f"Zone boundaries loaded: {len(rows)} of {len(known_ids)} zones"
+      f" ({len(known_ids) - len(rows)} lookup zones have no polygon, {skipped} polygons not in lookup)")
 
 pd.DataFrame({
     "payment_type_id": [1, 2, 3, 4],
@@ -63,13 +75,7 @@ for start in range(0, total, 500_000):
     print(f"loaded {min(start + 500_000, total):,} / {total:,}")
 
 # ---- Indexes (after loading, so inserts stay fast) ----
-conn.executescript("""
-CREATE INDEX idx_trip_pickup_dt ON trip(pickup_dt);
-CREATE INDEX idx_trip_pu_zone   ON trip(pu_zone_id);
-CREATE INDEX idx_trip_do_zone   ON trip(do_zone_id);
-CREATE INDEX idx_trip_hour      ON trip(pickup_hour);
-CREATE INDEX idx_trip_payment   ON trip(payment_type_id);
-""")
+conn.executescript(open("db/indexes.sql").read())
 conn.commit()
 conn.close()
 print("Database built")
