@@ -142,6 +142,29 @@ label.inline { display: flex; align-items: center; gap: 6px; }
 .chart-box { position: relative; height: 280px; }
 .chart-box.tall { height: 340px; }
 
+/* Map */
+.map-box {
+  height: 460px;
+  border-radius: 8px;
+  background: #e8eef5;          /* light blue stands in for water, there are no map tiles */
+  border: 1px solid var(--border);
+}
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-swatch {
+  width: 18px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
 /* Table */
 .table-wrap { overflow-x: auto; margin-top: 8px; }
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }

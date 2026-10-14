@@ -10,6 +10,9 @@ const state = {
   order: "desc",
   zoneNames: {},       // location_id -> "Zone name (Borough)"
   charts: {},
+  map: null,           // the Leaflet map
+  zoneLayer: null,     // GeoJSON layer holding every zone polygon
+  mapRequestId: 0,     // used to ignore out-of-date map responses
   requestId: 0,        // used to ignore out-of-date responses
 };
 
@@ -187,6 +190,139 @@ function updateZonesChart(rows) {
   c.update();
 }
 
+// ---------- zone map ----------
+// What each "colour zones by" option means. minTrips greys out zones with too little data,
+// because an average over a handful of trips is noise rather than a pattern.
+const MAP_METRICS = {
+  pickups:      { label: "Pickups",          fmt: fmtInt,                          minTrips: 1 },
+  dropoffs:     { label: "Dropoffs",         fmt: fmtInt,                          minTrips: 1 },
+  avg_fare:     { label: "Average fare",     fmt: fmtMoney,                        minTrips: 30 },
+  avg_distance: { label: "Average distance", fmt: (v) => fmtNum(v, 2) + " mi",     minTrips: 30 },
+  avg_tip_pct:  { label: "Average tip",      fmt: (v) => fmtNum(v, 1) + "%",       minTrips: 30 },
+};
+
+// Light to dark yellow, five classes. Zones with no data get the grey.
+const MAP_COLOURS = ["#fff3c4", "#fde08a", "#f9c74f", "#e09f1f", "#a76a00"];
+const MAP_NO_DATA = "#d9dee6";
+
+// Quantile class boundaries: each class holds roughly the same number of zones. Trip counts
+// are very skewed (Midtown dwarfs most zones), so equal-width classes would paint almost
+// every zone the palest colour.
+function classBreaks(values, classes) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const breaks = [];
+  for (let i = 1; i < classes; i++) {
+    breaks.push(sorted[Math.floor((i * sorted.length) / classes)]);
+  }
+  return breaks;
+}
+
+// Which class (0 .. classes-1) a value falls into.
+function classOf(value, breaks) {
+  let i = 0;
+  while (i < breaks.length && value >= breaks[i]) i++;
+  return i;
+}
+
+async function initMap() {
+  if (typeof L === "undefined") {
+    $("map-hint").textContent = "The map library failed to load. Check your internet connection and reload.";
+    return;
+  }
+  try {
+    const geo = await api("/api/zones/geojson");
+    if (!geo.features.length) {
+      $("map-hint").textContent = "No zone boundaries in the database. Rebuild it with pipeline/load_db.py.";
+      return;
+    }
+    state.map = L.map("map", { zoomSnap: 0.25, attributionControl: false });
+    state.zoneLayer = L.geoJSON(geo, {
+      style: () => ({ weight: 0.6, color: "#ffffff", fillColor: MAP_NO_DATA, fillOpacity: 0.95 }),
+      onEachFeature: (feature, layer) => {
+        // Clicking a zone sets the pickup-zone filter; clicking the selected zone clears it.
+        layer.on("click", () => {
+          const id = String(feature.properties.location_id);
+          $("f-zone").value = $("f-zone").value === id ? "" : id;
+          loadDashboard();
+        });
+      },
+    }).addTo(state.map);
+    state.map.fitBounds(state.zoneLayer.getBounds());
+  } catch (err) {
+    $("map-hint").textContent = "Could not load zone boundaries: " + err.message;
+  }
+}
+
+async function loadMap() {
+  if (!state.zoneLayer) return;           // map never started (library or boundaries missing)
+  const id = ++state.mapRequestId;
+  const metric = $("map-metric").value;
+  const cfg = MAP_METRICS[metric];
+
+  // The map ignores the pickup-zone filter, otherwise picking one zone would blank out all
+  // the others and you could not click a different one. The picked zone is outlined instead.
+  const params = filterParams();
+  params.delete("zone");
+  params.set("metric", metric);
+  params.set("min_trips", cfg.minTrips);
+
+  let data;
+  try {
+    data = await api("/api/stats/by-zone", params);
+  } catch (err) {
+    $("map-hint").textContent = "Could not load map data: " + err.message;
+    return;
+  }
+  if (id !== state.mapRequestId) return;  // a newer request replaced this one
+
+  const byZone = {};
+  for (const z of data.zones) byZone[z.zone_id] = z;
+  const values = data.zones.map((z) => z.value).filter((v) => v != null);
+  const breaks = classBreaks(values, MAP_COLOURS.length);
+  const selected = $("f-zone").value;
+
+  state.zoneLayer.eachLayer((layer) => {
+    const props = layer.feature.properties;
+    const row = byZone[props.location_id];
+    const has = row && row.value != null;
+    layer.setStyle({
+      fillColor: has ? MAP_COLOURS[classOf(row.value, breaks)] : MAP_NO_DATA,
+      weight: String(props.location_id) === selected ? 3 : 0.6,
+      color: String(props.location_id) === selected ? "#2b6cb0" : "#ffffff",
+    });
+    const valueText = has ? `${cfg.label}: ${cfg.fmt(row.value)} (${fmtInt(row.trips)} trips)`
+                          : "Not enough trips";
+    layer.bindTooltip(`<strong>${props.zone_name}</strong><br>${props.borough}<br>${valueText}`,
+                      { sticky: true });
+    if (String(props.location_id) === selected) layer.bringToFront();
+  });
+
+  renderMapLegend(values, breaks, cfg);
+  $("map-hint").textContent =
+    "Click a zone to filter the dashboard to trips picked up there. Click it again to clear." +
+    (cfg.minTrips > 1 ? ` Zones with fewer than ${cfg.minTrips} trips are grey.` : "");
+}
+
+// One swatch per class, labelled with the value range it covers.
+function renderMapLegend(values, breaks, cfg) {
+  const box = $("map-legend");
+  box.replaceChildren();
+  if (!values.length) return;
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const edges = [lo, ...breaks, hi];
+  MAP_COLOURS.forEach((colour, i) => {
+    const item = document.createElement("span");
+    item.className = "legend-item";
+    const swatch = document.createElement("span");
+    swatch.className = "legend-swatch";
+    swatch.style.background = colour;
+    item.appendChild(swatch);
+    item.appendChild(document.createTextNode(`${cfg.fmt(edges[i])} to ${cfg.fmt(edges[i + 1])}`));
+    box.appendChild(item);
+  });
+}
+
 // ---------- data loading ----------
 async function loadDashboard() {
   const id = ++state.requestId;
@@ -218,6 +354,8 @@ async function loadDashboard() {
     );
     return;
   }
+
+  loadMap();
 
   state.page = 1;
   await loadTrips();
@@ -338,6 +476,7 @@ function bindEvents() {
   $("apply").addEventListener("click", loadDashboard);
   $("reset").addEventListener("click", resetFilters);
   $("top-k").addEventListener("change", loadDashboard);
+  $("map-metric").addEventListener("change", loadMap);
 
   // Pressing Enter in a filter box applies the filters.
   document.querySelectorAll(".filters input").forEach((i) =>
@@ -383,6 +522,7 @@ async function init() {
     );
     return;
   }
+  await initMap();
   await loadDashboard();
 }
 

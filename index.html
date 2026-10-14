@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NYC Taxi Mobility Dashboard</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -76,6 +78,23 @@
     <!-- Charts -->
     <section class="charts">
       <div class="card chart-card wide">
+        <div class="chart-head">
+          <h2>Zone map</h2>
+          <label class="inline">Colour zones by
+            <select id="map-metric">
+              <option value="pickups" selected>Pickups</option>
+              <option value="dropoffs">Dropoffs</option>
+              <option value="avg_fare">Average fare</option>
+              <option value="avg_distance">Average distance</option>
+              <option value="avg_tip_pct">Average tip (%)</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint" id="map-hint">Click a zone to filter the dashboard to trips picked up there. Click it again to clear.</p>
+        <div id="map" class="map-box"></div>
+        <div id="map-legend" class="map-legend"></div>
+      </div>
+      <div class="card chart-card wide">
         <h2>Trips and average speed by hour</h2>
         <p class="hint">Bars show trip counts. The line shows average speed in mph, which drops when traffic builds.</p>
         <div class="chart-box"><canvas id="chart-hour"></canvas></div>
@@ -108,7 +127,7 @@
           <thead>
             <tr>
               <th data-sort="pickup_dt">Pickup time</th>
-              <th data-sort="pu_zone_id">Pickup zone</th>
+              <th>Pickup zone</th>
               <th data-sort="distance" class="num">Distance (mi)</th>
               <th data-sort="fare" class="num">Fare</th>
               <th class="num">Tip</th>
