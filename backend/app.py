@@ -124,22 +124,6 @@ def table_or_scan(table, scan_sql, clause, params):
 
 
 # --------------------------------------------------------------------------
-# Realistic speed
-# --------------------------------------------------------------------------
-# Averaging each trip's own speed (AVG(avg_speed_mph)) is badly skewed: a 0.3 mi trip
-# that took 20 seconds "travelled" at 54 mph and drags the average up. The honest
-# figure is total distance / total time, computed only over trips that look physically
-# plausible (real taxis in Manhattan traffic average roughly 10-13 mph; late night
-# and early morning reach the high teens).
-SPEED_OK = ("distance >= 0.2 AND duration_min BETWEEN 1 AND 180 "
-            "AND avg_speed_mph BETWEEN 2 AND 60")
-SPEED_EXPR = (f"ROUND(SUM(CASE WHEN {SPEED_OK} THEN distance END) / "
-              f"NULLIF(SUM(CASE WHEN {SPEED_OK} THEN duration_min END) / 60.0, 0), 1)")
-
-_hour_cache = None  # unfiltered by-hour result, computed once per server run
-
-
-# --------------------------------------------------------------------------
 # Pages and lookups
 # --------------------------------------------------------------------------
 @app.get("/")
@@ -207,20 +191,11 @@ def summary():
 
 @app.get("/api/stats/by-hour")
 def by_hour():
-    """Trips and realistic average speed per pickup hour.
-    Always computed from the trip table (the precomputed summary_hour table holds the
-    skewed per-trip average). The unfiltered result is cached after the first call."""
-    global _hour_cache
     clause, params = build_filters(request.args)
-    if not clause and _hour_cache is not None:
-        return jsonify(_hour_cache)
-
-    rows = query(f"""SELECT pickup_hour AS hour, COUNT(*) AS trips,
-                            {SPEED_EXPR} AS avg_speed
-                     FROM trip{clause} GROUP BY pickup_hour ORDER BY pickup_hour""", params)
-    if not clause:
-        _hour_cache = rows
-    return jsonify(rows)
+    scan = f"""SELECT pickup_hour AS hour, COUNT(*) AS trips,
+                      ROUND(AVG(avg_speed_mph), 1) AS avg_speed
+               FROM trip{clause} GROUP BY pickup_hour ORDER BY pickup_hour"""
+    return jsonify(table_or_scan("summary_hour", scan, clause, params))
 
 
 @app.get("/api/stats/by-weekday")
@@ -318,7 +293,7 @@ def hour_weekend():
     """Do weekends have a different daily rhythm? Trips, speed, fare per hour, split by is_weekend."""
     clause, params = build_filters(request.args)
     return jsonify(query(f"""SELECT is_weekend, pickup_hour AS hour, COUNT(*) AS trips,
-                                    {SPEED_EXPR} AS avg_speed,
+                                    ROUND(AVG(avg_speed_mph), 1) AS avg_speed,
                                     ROUND(AVG(fare), 2) AS avg_fare
                              FROM trip{clause}
                              GROUP BY is_weekend, pickup_hour
