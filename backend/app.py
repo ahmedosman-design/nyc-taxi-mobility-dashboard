@@ -1,4 +1,4 @@
-﻿"""Flask API for the NYC Taxi Mobility Dashboard.
+"""Flask API for the NYC Taxi Mobility Dashboard.
 
 Every endpoint accepts the same filters (see build_filters), so the dashboard can
 re-slice every chart with one query string.
@@ -344,4 +344,4 @@ def borough():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True, use_reloader=False)
