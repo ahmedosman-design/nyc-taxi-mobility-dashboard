@@ -218,7 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-data/
 *.db
 venv/
 logs/excluded_records.csvd a t a 2 / * . z i p 
@@ -229,3 +228,8 @@ logs/excluded_records.csvd a t a 2 / * . z i p
 *.zip
 data2/
 *.zip
+
+# data: keep only the small reference files
+data/*
+!data/taxi_zone_lookup.csv
+!data/taxi_zones/
