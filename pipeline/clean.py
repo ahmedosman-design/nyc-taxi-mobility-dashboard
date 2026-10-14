@@ -27,16 +27,14 @@ flag(df[required].isna().any(axis=1), "missing required field")
 flag(~((df["tpep_pickup_datetime"] >= "2019-01-01") &
        (df["tpep_pickup_datetime"] < "2019-02-01")), "pickup outside January 2019")
 flag(df["duration_min"] <= 0, "dropoff not after pickup")
-flag(df["duration_min"] > 180, "duration over 3 hours")
+flag(df["duration_min"] > 360, "duration over 6 hours")
 flag(df["trip_distance"] <= 0, "distance zero or negative")
 flag(df["trip_distance"] > 100, "distance over 100 miles")
 flag(df["fare_amount"] <= 0, "fare zero or negative")
 flag(df["fare_amount"] > 500, "fare over $500")
 flag(~df["passenger_count"].between(1, 6), "passenger count not 1-6")
 flag(~df["RatecodeID"].between(1, 6), "invalid rate code")
-flag(df["avg_speed_mph"] > 60, "speed over 60 mph")
-# Practically stationary for 10+ minutes: almost certainly a meter left running
-flag((df["avg_speed_mph"] < 1) & (df["duration_min"] > 10), "speed under 1 mph for 10+ min")
+flag(df["avg_speed_mph"] > 80, "speed over 80 mph")
 # Fare/distance mismatch: tiny distances inflate fare_per_mile (max was 41,500)
 flag(df["fare_amount"] / df["trip_distance"] > 100, "fare per mile over $100")
 

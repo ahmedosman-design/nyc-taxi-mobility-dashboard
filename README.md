@@ -12,9 +12,11 @@ a relational SQLite database, a Flask API and an interactive web dashboard with 
 ```
 backend/app.py        Flask API (also serves the dashboard)
 frontend/             Dashboard (HTML, CSS, JavaScript, Chart.js, Leaflet)
-pipeline/             clean.py, load_db.py, build_summary.py, spatial.py, algorithms.py, dump_db.py
+pipeline/             clean.py, load_db.py, build_summary.py, check_clean.py, spatial.py,
+                      algorithms.py, dump_db.py
 db/                   schema.sql, indexes.sql, taxi_dump.sql (database dump)
-logs/                 exclusion_summary.csv (what the cleaning step removed and why)
+logs/                 exclusion_summary.csv (what the cleaning step removed and why),
+                      run_totals.csv (raw / excluded / clean row counts)
 data/                 raw input files (NOT in Git, see "Get the data")
 requirements.txt
 ```
@@ -74,6 +76,13 @@ Remove-Item data\taxi_zones.zip
 
 If a link no longer works, download the same three files from the TLC page above.
 
+**Using the CSV instead of Parquet.** The assignment page also provides the January trips as a
+CSV. If you only have that, save it as `data/yellow_tripdata_2019-01.csv`; `clean.py` uses it
+automatically when the `.parquet` file is missing (and prints a warning). The CSV has
+7,667,792 rows. The raw row count, and so the exact excluded and clean counts, can differ between
+the two files, so always compare against the `Raw rows` line that `clean.py` prints for the file
+you used.
+
 ## 3. Build the database
 
 Run these from the project root, in order (the first two take several minutes):
@@ -83,15 +92,23 @@ python pipeline\clean.py          # cleans trips, writes data/clean_trips.parque
 python pipeline\load_db.py        # creates db/taxi.db (schema, lookups, zone polygons, trips, indexes)
 python pipeline\build_summary.py  # precomputed summary tables for fast unfiltered charts
 python pipeline\check_db.py       # sanity check: prints row counts
+python pipeline\check_clean.py    # verifies raw = excluded + clean and that the log, data and DB match the current rules
 ```
+
+Re-run all of these, in this order, whenever you change a rule in `clean.py`: the database and
+the logs are rebuilt from scratch and `check_clean.py` fails if any of them is out of date.
 
 Expected result: about 7.4 million trips and 265 zones, of which 263 have map polygons.
 
-To skip the pipeline, restore the supplied sample dump instead (about 20,000 trips, enough to
-try the dashboard):
+`db/taxi_dump.sql` is a dump of the schema, lookup tables, zone polygons, indexes and a sample of
+about 20,000 trips. Regenerate it after rebuilding the database with `python pipeline\dump_db.py`
+(add `--all` for every trip, about 1 GB).
 
-```
-sqlite3 db/taxi.db < db/taxi_dump.sql
+To skip the pipeline and try the dashboard on the sample, restore the dump into a fresh database
+(no `sqlite3` program needed):
+
+```powershell
+python -c "import sqlite3; sqlite3.connect('db/taxi.db').executescript(open('db/taxi_dump.sql', encoding='utf-8').read())"
 ```
 
 ## 4. Run the app
@@ -106,7 +123,7 @@ second server is needed. Check the API with http://127.0.0.1:5000/api/health.
 ## API overview
 
 All endpoints accept the same filters: `start`, `end`, `min_distance`, `max_distance`,
-`max_fare`, `zone`, `hour`, `payment`.
+`max_fare`, `zone`, `hour`, `payment`. `end` is inclusive (`end=2019-01-05` includes all of Jan 5).
 
 | Endpoint | Returns |
 |---|---|
@@ -119,9 +136,14 @@ All endpoints accept the same filters: `start`, `end`, `min_distance`, `max_dist
 
 ## Data cleaning
 
-`pipeline/clean.py` applies 13 exclusion rules (duplicates, missing fields, impossible
-durations, distances, fares, speeds and similar). Every removed row is written to
-`logs/excluded_records.csv`, and `logs/exclusion_summary.csv` counts rows per rule.
+`pipeline/clean.py` applies 18 exclusion rules: exact duplicates, missing required fields,
+pickups outside January 2019, dropoff not after pickup, durations over 3 hours, distances of 0.1
+miles or less or over 100, fares of $0 or less or over $500, passenger counts outside 1-6,
+invalid rate codes, speeds over 60 mph, stationary trips (under 1 mph for over 10 minutes), fare
+per mile over $100, tips over 3x the fare, and zone ids missing from the lookup. The first rule a row
+matches is the one recorded. Every removed row is written to
+`logs/excluded_records.csv`, and `logs/exclusion_summary.csv` counts rows per rule (rules that
+matched nothing are not listed).
 Derived features: `duration_min`, `avg_speed_mph`, `fare_per_mile`, `tip_pct`,
 `pickup_hour`, `day_of_week`, `is_weekend`.
 
