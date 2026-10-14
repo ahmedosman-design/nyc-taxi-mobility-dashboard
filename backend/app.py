@@ -1,4 +1,5 @@
-﻿import os
+﻿import json
+import os
 import sys
 import sqlite3
 from flask import Flask, jsonify, request
@@ -72,60 +73,4 @@ def summary():
 @app.get("/api/stats/by-hour")
 def by_hour():
     clause, params = build_filters(request.args)
-    scan = f"""SELECT pickup_hour AS hour, COUNT(*) AS trips,
-                      ROUND(AVG(avg_speed_mph), 1) AS avg_speed
-               FROM trip{clause} GROUP BY pickup_hour ORDER BY pickup_hour"""
-    return jsonify(table_or_scan("summary_hour", scan, clause, params))
-
-
-@app.get("/api/stats/by-weekday")
-def by_weekday():
-    clause, params = build_filters(request.args)
-    scan = f"""SELECT day_of_week AS day, COUNT(*) AS trips
-               FROM trip{clause} GROUP BY day_of_week ORDER BY day_of_week"""
-    return jsonify(table_or_scan("summary_weekday", scan, clause, params))
-
-
-@app.get("/api/trips")
-def trips():
-    clause, params = build_filters(request.args)
-    page = max(int(request.args.get("page", 1)), 1)
-    # The sort column goes into the SQL text, so it must come from a fixed allowed list
-    sort = request.args.get("sort", "pickup_dt")
-    if sort not in {"pickup_dt", "distance", "fare", "duration_min"}:
-        sort = "pickup_dt"
-    direction = "ASC" if request.args.get("order") == "asc" else "DESC"
-    sql = f"""SELECT trip_id, pickup_dt, pu_zone_id, distance, fare, tip,
-                     duration_min, avg_speed_mph
-              FROM trip{clause}
-              ORDER BY {sort} {direction} LIMIT 50 OFFSET ?"""
-    return jsonify(query(sql, params + [(page - 1) * 50]))
-
-
-@app.get("/api/zones")
-def zones():
-    return jsonify(query("""SELECT z.location_id, z.zone_name, b.name AS borough
-                            FROM zone z JOIN borough b ON z.borough_id = b.borough_id
-                            ORDER BY z.location_id"""))
-
-
-@app.get("/api/top-zones")
-def top_zones():
-    k = min(max(int(request.args.get("k", 10)), 1), 265)
-    clause, params = build_filters(request.args)
-    if clause:
-        rows = query(f"SELECT pu_zone_id, COUNT(*) AS c FROM trip{clause} GROUP BY pu_zone_id", params)
-    else:
-        rows = [{"pu_zone_id": r["zone_id"], "c": r["trips"]}
-                for r in query("SELECT * FROM summary_zone")]
-    names = {z["location_id"]: z["zone_name"] or "Unknown"
-             for z in query("SELECT location_id, zone_name FROM zone")}
-    counts = [(r["pu_zone_id"], r["c"]) for r in rows]
-    # Your own min-heap does the ranking (no sorted(), no heapq)
-    return jsonify([{"zone_id": z, "zone_name": names[z], "trips": c}
-                    for c, z in top_k_zones(counts, k)])
-
-
-if __name__ == "__main__":
-    # use_reloader=False: saving a file no longer restarts (or crashes) the server
-    app.run(debug=True, use_reloader=False, port=5000)
+    scan = f"""SELECT
