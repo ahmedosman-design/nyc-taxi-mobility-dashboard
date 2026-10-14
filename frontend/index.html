@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NYC Taxi Mobility Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>NYC Taxi Mobility Dashboard</h1>
+    <p>Yellow cab trips, January 2019</p>
+  </header>
+
+  <main>
+    <section id="kpis">
+      <div class="card"><span>Total trips</span><strong id="kpi-trips">...</strong></div>
+      <div class="card"><span>Average fare</span><strong id="kpi-fare">...</strong></div>
+      <div class="card"><span>Average distance</span><strong id="kpi-dist">...</strong></div>
+      <div class="card"><span>Average tip (card)</span><strong id="kpi-tip">...</strong></div>
+    </section>
+
+    <section class="panel">
+      <h2>Demand vs speed by hour of day</h2>
+      <p class="note">Bars show trips; the line shows average speed. When demand rises, speed falls.</p>
+      <canvas id="hourChart"></canvas>
+    </section>
+
+    <div class="two-col">
+      <section class="panel">
+        <h2>Top 10 pickup zones</h2>
+        <p class="note">Ranked by the custom min-heap algorithm.</p>
+        <canvas id="zoneChart"></canvas>
+      </section>
+      <section class="panel">
+        <h2>Trips by day of week</h2>
+        <p class="note">Monday to Sunday, January 2019.</p>
+        <canvas id="weekdayChart"></canvas>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

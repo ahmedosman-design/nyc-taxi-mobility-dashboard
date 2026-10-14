@@ -221,3 +221,4 @@ __marimo__/
 data/
 *.db
 venv/
+logs/excluded_records.csv
