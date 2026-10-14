@@ -227,3 +227,5 @@ logs/excluded_records.csvd a t a 2 / * . z i p
  *.zip
 
 *.zip
+data2/
+*.zip
