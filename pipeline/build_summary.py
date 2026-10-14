@@ -17,7 +17,7 @@ FROM trip;
 
 CREATE TABLE summary_hour AS
 SELECT pickup_hour AS hour, COUNT(*) AS trips,
-       ROUND(AVG(avg_speed_mph), 1) AS avg_speed
+       ROUND(SUM(distance) / (SUM(duration_min) / 60.0), 1) AS avg_speed
 FROM trip GROUP BY pickup_hour;
 
 CREATE TABLE summary_weekday AS

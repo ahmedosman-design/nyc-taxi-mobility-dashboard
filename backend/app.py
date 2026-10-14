@@ -192,8 +192,10 @@ def summary():
 @app.get("/api/stats/by-hour")
 def by_hour():
     clause, params = build_filters(request.args)
+    # Time-weighted speed: total miles / total hours. A plain average of per-trip speeds lets
+    # very short trips and rounding noise dominate, which gives unrealistic values.
     scan = f"""SELECT pickup_hour AS hour, COUNT(*) AS trips,
-                      ROUND(AVG(avg_speed_mph), 1) AS avg_speed
+                      ROUND(SUM(distance) / (SUM(duration_min) / 60.0), 1) AS avg_speed
                FROM trip{clause} GROUP BY pickup_hour ORDER BY pickup_hour"""
     return jsonify(table_or_scan("summary_hour", scan, clause, params))
 
@@ -293,7 +295,7 @@ def hour_weekend():
     """Do weekends have a different daily rhythm? Trips, speed, fare per hour, split by is_weekend."""
     clause, params = build_filters(request.args)
     return jsonify(query(f"""SELECT is_weekend, pickup_hour AS hour, COUNT(*) AS trips,
-                                    ROUND(AVG(avg_speed_mph), 1) AS avg_speed,
+                                    ROUND(SUM(distance) / (SUM(duration_min) / 60.0), 1) AS avg_speed,
                                     ROUND(AVG(fare), 2) AS avg_fare
                              FROM trip{clause}
                              GROUP BY is_weekend, pickup_hour
@@ -344,4 +346,4 @@ def borough():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True, use_reloader=False)

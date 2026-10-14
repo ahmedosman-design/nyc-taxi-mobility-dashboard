@@ -123,6 +123,7 @@ function initCharts() {
         y: { beginAtZero: true, title: { display: true, text: "Trips" } },
         y1: {
           beginAtZero: true,
+          suggestedMax: 30,
           position: "right",
           grid: { drawOnChartArea: false },
           title: { display: true, text: "Speed (mph)" },
