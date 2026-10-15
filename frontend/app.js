@@ -12,11 +12,29 @@ const state = {
   charts: {},
   map: null,           // the Leaflet map
   zoneLayer: null,     // GeoJSON layer holding every zone polygon
+  zoneInfo: {},        // location_id -> { has, row, cfg } for the metric currently on the map
   mapRequestId: 0,     // used to ignore out-of-date map responses
   requestId: 0,        // used to ignore out-of-date responses
 };
 
 const $ = (id) => document.getElementById(id);
+
+// Small DOM builder. Uses textContent, so zone names can never inject HTML.
+function make(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+// Shows a spinner on the Apply button while any dashboard request is running.
+let busyCount = 0;
+function setBusy(on) {
+  busyCount += on ? 1 : -1;
+  const btn = $("apply");
+  btn.classList.toggle("is-loading", busyCount > 0);
+  btn.setAttribute("aria-busy", busyCount > 0 ? "true" : "false");
+}
 
 // ---------- helpers ----------
 async function api(path, params) {
@@ -67,8 +85,15 @@ function filterParams() {
   add("min_distance", "f-min-distance");
   add("max_distance", "f-max-distance");
   add("max_fare", "f-max-fare");
-  // The API makes "end" inclusive itself (it adds a day), so send the picked date as is.
-  add("end", "f-end");
+
+  // The API treats "end" as exclusive, so move the picked date forward one day
+  // to make the chosen end date inclusive.
+  const end = $("f-end").value;
+  if (end) {
+    const d = new Date(end + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() + 1);
+    p.set("end", d.toISOString().slice(0, 10));
+  }
   return p;
 }
 
@@ -81,7 +106,13 @@ function withExtra(base, extra) {
 // ---------- charts ----------
 function initCharts() {
   Chart.defaults.font.family = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
-  Chart.defaults.color = "#667085";
+  Chart.defaults.color = "#9aa8c2";
+  Chart.defaults.borderColor = "rgba(255, 255, 255, 0.08)";   // grid lines
+  Chart.defaults.plugins.tooltip.backgroundColor = "rgba(5, 9, 20, 0.96)";
+  Chart.defaults.plugins.tooltip.borderColor = "rgba(255, 255, 255, 0.18)";
+  Chart.defaults.plugins.tooltip.borderWidth = 1;
+  Chart.defaults.plugins.tooltip.padding = 10;
+  Chart.defaults.plugins.tooltip.cornerRadius = 10;
 
   state.charts.hour = new Chart($("chart-hour"), {
     data: {
@@ -91,7 +122,8 @@ function initCharts() {
           type: "bar",
           label: "Trips",
           data: [],
-          backgroundColor: "#f5b301",
+          backgroundColor: "#2563eb",
+          borderRadius: 4,
           yAxisID: "y",
           order: 2,
         },
@@ -99,8 +131,8 @@ function initCharts() {
           type: "line",
           label: "Avg speed (mph)",
           data: [],
-          borderColor: "#2b6cb0",
-          backgroundColor: "#2b6cb0",
+          borderColor: "#ffffff",
+          backgroundColor: "#ffffff",
           tension: 0.3,
           pointRadius: 3,
           yAxisID: "y1",
@@ -116,7 +148,6 @@ function initCharts() {
         y: { beginAtZero: true, title: { display: true, text: "Trips" } },
         y1: {
           beginAtZero: true,
-          suggestedMax: 30,
           position: "right",
           grid: { drawOnChartArea: false },
           title: { display: true, text: "Speed (mph)" },
@@ -129,7 +160,7 @@ function initCharts() {
     type: "bar",
     data: {
       labels: WEEKDAYS,
-      datasets: [{ label: "Trips", data: [], backgroundColor: "#2b6cb0" }],
+      datasets: [{ label: "Trips", data: [], backgroundColor: "#3b82f6", borderRadius: 6 }],
     },
     options: {
       responsive: true,
@@ -143,7 +174,7 @@ function initCharts() {
     type: "bar",
     data: {
       labels: [],
-      datasets: [{ label: "Trips", data: [], backgroundColor: "#f5b301" }],
+      datasets: [{ label: "Trips", data: [], backgroundColor: "#60a5fa", borderRadius: 6 }],
     },
     options: {
       indexAxis: "y",
@@ -195,9 +226,9 @@ const MAP_METRICS = {
   avg_tip_pct:  { label: "Average tip",      fmt: (v) => fmtNum(v, 1) + "%",       minTrips: 30 },
 };
 
-// Light to dark yellow, five classes. Zones with no data get the grey.
-const MAP_COLOURS = ["#fff3c4", "#fde08a", "#f9c74f", "#e09f1f", "#a76a00"];
-const MAP_NO_DATA = "#d9dee6";
+// Dark to bright blue, five classes. Zones with no data get the grey.
+const MAP_COLOURS = ["#1b2f63", "#2552b5", "#3b82f6", "#7db4ff", "#e0edff"];
+const MAP_NO_DATA = "#1a2234";
 
 // Quantile class boundaries: each class holds roughly the same number of zones. Trip counts
 // are very skewed (Midtown dwarfs most zones), so equal-width classes would paint almost
@@ -218,6 +249,47 @@ function classOf(value, breaks) {
   return i;
 }
 
+// The card shown in both the hover tooltip and the click popup.
+function zoneCard(props, withActions) {
+  const info = state.zoneInfo[props.location_id];
+  const card = make("div", "zone-card");
+
+  const head = make("div", "zone-card-head");
+  head.append(make("span", "zone-name", props.zone_name || "Zone " + props.location_id),
+              make("span", "zone-chip", props.borough || "Unknown"));
+  card.append(head);
+
+  if (info && info.has) {
+    card.append(make("div", "zone-metric-label", info.cfg.label),
+                make("div", "zone-metric-value", info.cfg.fmt(info.row.value)),
+                make("div", "zone-meta", fmtInt(info.row.trips) + " trips"));
+  } else {
+    card.append(make("div", "zone-meta", "Not enough trips to show a value"));
+  }
+
+  if (withActions) {
+    const id = String(props.location_id);
+    const isSelected = $("f-zone").value === id;
+    const actions = make("div", "zone-actions");
+
+    const filterBtn = make("button", "primary small", isSelected ? "Clear zone filter" : "Filter to this zone");
+    filterBtn.type = "button";
+    filterBtn.addEventListener("click", () => {
+      $("f-zone").value = isSelected ? "" : id;
+      state.map.closePopup();
+      loadDashboard();
+    });
+
+    const closeBtn = make("button", "ghost small", "Close");
+    closeBtn.type = "button";
+    closeBtn.addEventListener("click", () => state.map.closePopup());
+
+    actions.append(filterBtn, closeBtn);
+    card.append(actions);
+  }
+  return card;
+}
+
 async function initMap() {
   if (typeof L === "undefined") {
     $("map-hint").textContent = "The map library failed to load. Check your internet connection and reload.";
@@ -231,13 +303,19 @@ async function initMap() {
     }
     state.map = L.map("map", { zoomSnap: 0.25, attributionControl: false });
     state.zoneLayer = L.geoJSON(geo, {
-      style: () => ({ weight: 0.6, color: "#ffffff", fillColor: MAP_NO_DATA, fillOpacity: 0.95 }),
+      style: () => ({ weight: 0.6, color: "#070d1c", fillColor: MAP_NO_DATA, fillOpacity: 0.95 }),
       onEachFeature: (feature, layer) => {
-        // Clicking a zone sets the pickup-zone filter; clicking the selected zone clears it.
-        layer.on("click", () => {
-          const id = String(feature.properties.location_id);
-          $("f-zone").value = $("f-zone").value === id ? "" : id;
-          loadDashboard();
+        // Clicking a zone opens a card with a button that sets (or clears) the pickup-zone
+        // filter. A popup also works on touch screens, where there is no hover.
+        layer.bindPopup(() => zoneCard(feature.properties, true),
+                        { className: "zone-pop", closeButton: false, minWidth: 210, maxWidth: 280 });
+        // Hover highlight, so the zone under the cursor is obvious before you click.
+        layer.on("mouseover", (e) => {
+          e.target.setStyle({ weight: 2.5, color: "#ffffff" });
+          e.target.bringToFront();
+        });
+        layer.on("mouseout", (e) => {
+          if (e.target._base) e.target.setStyle(e.target._base);
         });
       },
     }).addTo(state.map);
@@ -275,20 +353,25 @@ async function loadMap() {
   const breaks = classBreaks(values, MAP_COLOURS.length);
   const selected = $("f-zone").value;
 
+  state.zoneInfo = {};
   state.zoneLayer.eachLayer((layer) => {
     const props = layer.feature.properties;
     const row = byZone[props.location_id];
-    const has = row && row.value != null;
-    layer.setStyle({
+    const has = !!(row && row.value != null);
+    state.zoneInfo[props.location_id] = { has, row, cfg };
+
+    const isSelected = String(props.location_id) === selected;
+    layer._base = {
       fillColor: has ? MAP_COLOURS[classOf(row.value, breaks)] : MAP_NO_DATA,
-      weight: String(props.location_id) === selected ? 3 : 0.6,
-      color: String(props.location_id) === selected ? "#2b6cb0" : "#ffffff",
-    });
-    const valueText = has ? `${cfg.label}: ${cfg.fmt(row.value)} (${fmtInt(row.trips)} trips)`
-                          : "Not enough trips";
-    layer.bindTooltip(`<strong>${props.zone_name}</strong><br>${props.borough}<br>${valueText}`,
-                      { sticky: true });
-    if (String(props.location_id) === selected) layer.bringToFront();
+      weight: isSelected ? 3 : 0.6,
+      color: isSelected ? "#ffffff" : "#070d1c",
+    };
+    layer.setStyle(layer._base);
+
+    // The tooltip content is built when it opens, so it always matches the current metric.
+    layer.bindTooltip(() => zoneCard(props, false),
+                      { sticky: true, className: "zone-tip", direction: "auto", offset: [14, 0], opacity: 1 });
+    if (isSelected) layer.bringToFront();
   });
 
   renderMapLegend(values, breaks, cfg);
@@ -319,6 +402,15 @@ function renderMapLegend(values, breaks, cfg) {
 
 // ---------- data loading ----------
 async function loadDashboard() {
+  setBusy(true);
+  try {
+    await loadDashboardInner();
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function loadDashboardInner() {
   const id = ++state.requestId;
   const base = filterParams();
   const k = $("top-k").value;
