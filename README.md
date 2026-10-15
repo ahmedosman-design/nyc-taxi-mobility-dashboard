@@ -1,22 +1,35 @@
 # NYC Taxi Mobility Dashboard
 
 A full-stack dashboard for exploring NYC yellow taxi trips (January 2019): a cleaning pipeline,
-a relational SQLite database, a Flask API and an interactive web dashboard with a zone map.
+a normalized SQLite database, a Flask API and an interactive dark-themed web dashboard with a zone map.
 
 - **Video walkthrough (5 min):** TODO: paste link here
 - **Team:** TODO: team name and members
 - **Technical report:** TODO: path or link to the PDF
 
+## System architecture
+
+![System architecture](docs/taxi_dashboard_architecture.png)
+
+Data flows left to right through four layers:
+
+1. **Raw data** (not in Git): TLC yellow taxi trips (Parquet), the taxi zone lookup (CSV) and the zone boundaries (shapefile).
+2. **Pipeline** (`pipeline/`): `clean.py` removes bad records and logs them, `load_db.py` builds the database,
+   `build_summary.py` precomputes chart tables.
+3. **Database** (`db/taxi.db`, SQLite): normalized tables `borough`, `zone`, `zone_boundary`, `payment_type`,
+   `rate_code` and `trip`, plus indexes on the columns the dashboard filters and sorts by.
+4. **Backend and frontend**: a Flask API (`backend/app.py`) that also serves the dashboard (`frontend/`),
+   so one command starts everything.
+
 ## Project structure
 
 ```
 backend/app.py        Flask API (also serves the dashboard)
-frontend/             Dashboard (HTML, CSS, JavaScript, Chart.js, Leaflet)
-pipeline/             clean.py, load_db.py, build_summary.py, check_clean.py, spatial.py,
-                      algorithms.py, dump_db.py
+frontend/             index.html, app.js, style.css (Chart.js and Leaflet load from a CDN)
+pipeline/             clean.py, load_db.py, build_summary.py, spatial.py, algorithms.py, dump_db.py
 db/                   schema.sql, indexes.sql, taxi_dump.sql (database dump)
-logs/                 exclusion_summary.csv (what the cleaning step removed and why),
-                      run_totals.csv (raw / excluded / clean row counts)
+docs/                 architecture diagram (and the report)
+logs/                 exclusion_summary.csv (what the cleaning step removed and why)
 data/                 raw input files (NOT in Git, see "Get the data")
 requirements.txt
 ```
@@ -26,6 +39,7 @@ requirements.txt
 - Python 3.10 or newer (developed on 3.12)
 - About 3 GB of free disk space and 8 GB of RAM (the raw file has about 7.7 million rows)
 - An internet connection (the dashboard loads Chart.js and Leaflet from a CDN)
+- A current Chrome or Edge is recommended; other browsers work but show a simpler dropdown menu
 
 ## 1. Install
 
@@ -40,7 +54,7 @@ pip install geopandas            # needed to read the zone boundary shapefile
 
 ## 2. Get the data
 
-The raw data is too large for GitHub, so it is not in this repository. Create a `data/` folder
+The raw data is too large for GitHub, so most of it is not in this repository. Create a `data/` folder
 in the project root and put these files in it:
 
 | File | Where to get it | Save as |
@@ -51,8 +65,8 @@ in the project root and put these files in it:
 
 All three come from the NYC TLC Trip Record Data page
 (https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page).
+The lookup and the shapefile are small and are already committed under `data/`; the Parquet file (110 MB) is not.
 
-After unzipping the boundaries, `data/taxi_zones/` must contain `taxi_zones.shp`, `.shx`, `.dbf` and `.prj`.
 The final layout is:
 
 ```
@@ -76,13 +90,6 @@ Remove-Item data\taxi_zones.zip
 
 If a link no longer works, download the same three files from the TLC page above.
 
-**Using the CSV instead of Parquet.** The assignment page also provides the January trips as a
-CSV. If you only have that, save it as `data/yellow_tripdata_2019-01.csv`; `clean.py` uses it
-automatically when the `.parquet` file is missing (and prints a warning). The CSV has
-7,667,792 rows. The raw row count, and so the exact excluded and clean counts, can differ between
-the two files, so always compare against the `Raw rows` line that `clean.py` prints for the file
-you used.
-
 ## 3. Build the database
 
 Run these from the project root, in order (the first two take several minutes):
@@ -92,24 +99,18 @@ python pipeline\clean.py          # cleans trips, writes data/clean_trips.parque
 python pipeline\load_db.py        # creates db/taxi.db (schema, lookups, zone polygons, trips, indexes)
 python pipeline\build_summary.py  # precomputed summary tables for fast unfiltered charts
 python pipeline\check_db.py       # sanity check: prints row counts
-python pipeline\check_clean.py    # verifies raw = excluded + clean and that the log, data and DB match the current rules
 ```
-
-Re-run all of these, in this order, whenever you change a rule in `clean.py`: the database and
-the logs are rebuilt from scratch and `check_clean.py` fails if any of them is out of date.
 
 Expected result: about 7.4 million trips and 265 zones, of which 263 have map polygons.
 
-`db/taxi_dump.sql` is a dump of the schema, lookup tables, zone polygons, indexes and a sample of
-about 20,000 trips. Regenerate it after rebuilding the database with `python pipeline\dump_db.py`
-(add `--all` for every trip, about 1 GB).
-
-To skip the pipeline and try the dashboard on the sample, restore the dump into a fresh database
-(no `sqlite3` program needed):
+To skip the pipeline, restore the supplied sample dump instead (about 20,000 trips, enough to try the
+dashboard; its numbers will differ from the full dataset). Delete `db/taxi.db` if it exists, then run:
 
 ```powershell
 python -c "import sqlite3; sqlite3.connect('db/taxi.db').executescript(open('db/taxi_dump.sql', encoding='utf-8').read())"
 ```
+
+With the `sqlite3` command-line tool installed, `sqlite3 db/taxi.db < db/taxi_dump.sql` does the same.
 
 ## 4. Run the app
 
@@ -117,13 +118,23 @@ python -c "import sqlite3; sqlite3.connect('db/taxi.db').executescript(open('db/
 python backend\app.py
 ```
 
-Open http://127.0.0.1:5000 in a browser. Flask serves both the API and the dashboard, so no
-second server is needed. Check the API with http://127.0.0.1:5000/api/health.
+Open **http://127.0.0.1:5000** in a browser. Flask serves both the API and the dashboard, so no second
+server is needed. Check the API with http://127.0.0.1:5000/api/health.
+
+## Dashboard features
+
+- **Filters:** date range, pickup hour, pickup zone, payment type, distance and fare. Apply shows a spinner while data loads.
+- **Zone map:** colour zones by pickups, dropoffs, average fare, distance or tip. Hover a zone for a summary card,
+  click it for a popup with a button that filters the whole dashboard to that zone. Grey zones have too few trips.
+  Zooming is limited to 50% to 150% of the opening view.
+- **Charts:** trips and average speed by hour, trips by weekday, and the busiest pickup zones.
+  Speed is total miles divided by total hours, so very short trips do not distort it.
+- **Trip table:** sortable by any column, 50 rows per page.
 
 ## API overview
 
 All endpoints accept the same filters: `start`, `end`, `min_distance`, `max_distance`,
-`max_fare`, `zone`, `hour`, `payment`. `end` is inclusive (`end=2019-01-05` includes all of Jan 5).
+`max_fare`, `zone`, `hour`, `payment`.
 
 | Endpoint | Returns |
 |---|---|
@@ -136,14 +147,9 @@ All endpoints accept the same filters: `start`, `end`, `min_distance`, `max_dist
 
 ## Data cleaning
 
-`pipeline/clean.py` applies 18 exclusion rules: exact duplicates, missing required fields,
-pickups outside January 2019, dropoff not after pickup, durations over 3 hours, distances of 0.1
-miles or less or over 100, fares of $0 or less or over $500, passenger counts outside 1-6,
-invalid rate codes, speeds over 60 mph, stationary trips (under 1 mph for over 10 minutes), fare
-per mile over $100, tips over 3x the fare, and zone ids missing from the lookup. The first rule a row
-matches is the one recorded. Every removed row is written to
-`logs/excluded_records.csv`, and `logs/exclusion_summary.csv` counts rows per rule (rules that
-matched nothing are not listed).
+`pipeline/clean.py` applies 13 exclusion rules (duplicates, missing fields, impossible
+durations, distances, fares, speeds and similar). Every removed row is written to
+`logs/excluded_records.csv`, and `logs/exclusion_summary.csv` counts rows per rule.
 Derived features: `duration_min`, `avg_speed_mph`, `fare_per_mile`, `tip_pct`,
 `pickup_hour`, `day_of_week`, `is_weekend`.
 
@@ -151,3 +157,18 @@ Derived features: `duration_min`, `avg_speed_mph`, `fare_per_mile`, `tip_pct`,
 
 `pipeline/algorithms.py` implements a min-heap and `top_k_zones` by hand (no `heapq`, `Counter`
 or `sort_values`). It ranks the busiest pickup zones in O(n log k) time and O(k) space.
+
+## Design notes
+
+- **SQLite:** one file, no server to install, and fast enough for read-heavy dashboard queries once indexed.
+- **Summary tables:** unfiltered charts read tiny precomputed tables. Filtered charts scan the `trip` table,
+  which takes a few seconds on the full dataset. That is the trade-off for keeping setup simple.
+- **Paging:** the trip table uses `LIMIT/OFFSET`, which slows down on very deep pages. Keyset paging would fix this.
+
+## Troubleshooting
+
+- **Blank page or "API offline":** open http://127.0.0.1:5000 (not `localhost`, and not the HTML file directly)
+  and make sure `python backend\app.py` is still running.
+- **`FileNotFoundError` in the pipeline:** check the `data/` layout shown above and run the commands from the project root.
+- **Shapefile errors:** run `pip install geopandas`.
+- **Port 5000 in use:** close the other program using it, or change the port on the last line of `backend/app.py`.
