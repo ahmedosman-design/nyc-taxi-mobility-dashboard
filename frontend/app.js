@@ -230,6 +230,11 @@ const MAP_METRICS = {
 const MAP_COLOURS = ["#1b2f63", "#2552b5", "#3b82f6", "#7db4ff", "#e0edff"];
 const MAP_NO_DATA = "#1a2234";
 
+// How far the map may be zoomed, as a share of the size it opens at (1 = 100%).
+// Change these two numbers to loosen or tighten the limits, for example 0.25 for 25%.
+const MAP_ZOOM_OUT_LIMIT = 0.75;   // zoom out to at most 75%
+const MAP_ZOOM_IN_LIMIT = 2.0;    // zoom in to at most 200%
+
 // Quantile class boundaries: each class holds roughly the same number of zones. Trip counts
 // are very skewed (Midtown dwarfs most zones), so equal-width classes would paint almost
 // every zone the palest colour.
@@ -319,7 +324,16 @@ async function initMap() {
         });
       },
     }).addTo(state.map);
-    state.map.fitBounds(state.zoneLayer.getBounds());
+    const bounds = state.zoneLayer.getBounds();
+    state.map.fitBounds(bounds);
+
+    // Limit zooming and panning. Each Leaflet zoom level doubles the scale, so a share of
+    // the opening size is converted to levels with log2.
+    const openZoom = state.map.getZoom();
+    state.map.setMinZoom(openZoom + Math.log2(MAP_ZOOM_OUT_LIMIT));
+    state.map.setMaxZoom(openZoom + Math.log2(MAP_ZOOM_IN_LIMIT));
+    state.map.setMaxBounds(bounds.pad(0.2));        // cannot drag the city out of view
+    state.map.options.maxBoundsViscosity = 1.0;     // the edge is a hard stop, not a rubber band
   } catch (err) {
     $("map-hint").textContent = "Could not load zone boundaries: " + err.message;
   }
