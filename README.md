@@ -6,6 +6,7 @@ a normalized SQLite database, a Flask API and an interactive dark-themed web das
 - **Team:** Junior Nyamu and Ahmed Osman
 - **Video walkthrough (5 min):https://1drv.ms/v/c/20ed77863e06ad12/IQBZWkEFIEypRJT9TwRRtp78AbrE_o33pM5gpqmsazKyfhs?e=tv1qBh 
 - **Technical report:** [docs/Technical_Report.pdf](docs/Technical_Report.pdf)
+- Team participation sheet: https://docs.google.com/spreadsheets/d/1P2qvtAfmpmPheCzWs2BzuiuJjrPIi0y4LYeQzLJE4sU/edit?usp=sharing
 
 ## System architecture
 
