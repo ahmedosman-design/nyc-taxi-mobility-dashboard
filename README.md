@@ -3,13 +3,13 @@
 A full-stack dashboard for exploring NYC yellow taxi trips (January 2019): a cleaning pipeline,
 a normalized SQLite database, a Flask API and an interactive dark-themed web dashboard with a zone map.
 
+- **Team:** Junior Nyamu and Ahmed Osman
 - **Video walkthrough (5 min):** TODO: paste link here
-- **Team:** TODO: team name and members
-- **Technical report:** TODO: path or link to the PDF
+- **Technical report:** [docs/Technical_Report.pdf](docs/Technical_Report.pdf)
 
 ## System architecture
 
-![System architecture](docs/taxi_dashboard_architecture.png)
+The architecture diagram is at [`docs/taxi_dashboard_architecture.png`](docs/taxi_dashboard_architecture.png).
 
 Data flows left to right through four layers:
 
@@ -17,7 +17,7 @@ Data flows left to right through four layers:
 2. **Pipeline** (`pipeline/`): `clean.py` removes bad records and logs them, `load_db.py` builds the database,
    `build_summary.py` precomputes chart tables.
 3. **Database** (`db/taxi.db`, SQLite): normalized tables `borough`, `zone`, `zone_boundary`, `payment_type`,
-   `rate_code` and `trip`, plus indexes on the columns the dashboard filters and sorts by.
+   `rate_code` and `trip`, plus indexes for the dashboard's filters.
 4. **Backend and frontend**: a Flask API (`backend/app.py`) that also serves the dashboard (`frontend/`),
    so one command starts everything.
 
@@ -26,11 +26,12 @@ Data flows left to right through four layers:
 ```
 backend/app.py        Flask API (also serves the dashboard)
 frontend/             index.html, app.js, style.css (Chart.js and Leaflet load from a CDN)
-pipeline/             clean.py, load_db.py, build_summary.py, spatial.py, algorithms.py, dump_db.py
+pipeline/             clean.py, load_db.py, build_summary.py, spatial.py, algorithms.py,
+                      dump_db.py, report_numbers.py
 db/                   schema.sql, indexes.sql, taxi_dump.sql (database dump)
-docs/                 architecture diagram (and the report)
+docs/                 architecture diagram and the technical report (PDF)
 logs/                 exclusion_summary.csv (what the cleaning step removed and why)
-data/                 raw input files (NOT in Git, see "Get the data")
+data/                 raw input files (mostly NOT in Git, see "Get the data")
 requirements.txt
 ```
 
@@ -48,8 +49,7 @@ From the project root:
 ```powershell
 python -m venv venv
 venv\Scripts\activate            # macOS/Linux: source venv/bin/activate
-pip install -r requirements.txt
-pip install geopandas            # needed to read the zone boundary shapefile
+pip install -r requirements.txt  # includes geopandas, which reads the zone boundary shapefile
 ```
 
 ## 2. Get the data
@@ -101,7 +101,7 @@ python pipeline\build_summary.py  # precomputed summary tables for fast unfilter
 python pipeline\check_db.py       # sanity check: prints row counts
 ```
 
-Expected result: about 7.4 million trips and 265 zones, of which 263 have map polygons.
+Expected result: 7,447,044 trips and 265 zones, of which 263 have map polygons.
 
 To skip the pipeline, restore the supplied sample dump instead (about 20,000 trips, enough to try the
 dashboard; its numbers will differ from the full dataset). Delete `db/taxi.db` if it exists, then run:
@@ -147,16 +147,26 @@ All endpoints accept the same filters: `start`, `end`, `min_distance`, `max_dist
 
 ## Data cleaning
 
-`pipeline/clean.py` applies 13 exclusion rules (duplicates, missing fields, impossible
-durations, distances, fares, speeds and similar). Every removed row is written to
-`logs/excluded_records.csv`, and `logs/exclusion_summary.csv` counts rows per rule.
-Derived features: `duration_min`, `avg_speed_mph`, `fare_per_mile`, `tip_pct`,
+`pipeline/clean.py` applies 17 ordered exclusion rules (duplicates, missing fields, impossible
+durations, distances, fares, speeds, passenger counts, unknown zones and similar). The first rule a row
+breaks is its recorded reason, so each removed row is counted once. On the January 2019 file it removes
+249,573 of 7,696,617 rows (3.24%), leaving 7,447,044; the largest group is passenger counts outside 1 to 6
+(143,693 rows). Every removed row is written to `logs/excluded_records.csv` (generated, not committed),
+and `logs/exclusion_summary.csv` counts rows per rule. All thresholds are listed at the top of the cleaning
+step and justified in the technical report.
+
+Derived features: `duration_min`, `avg_speed_mph`, `fare_per_mile`, `tip_pct` (card payments only),
 `pickup_hour`, `day_of_week`, `is_weekend`.
+
+Note: about 1.7% of trips start and end in zone 264, which the TLC lookup lists with an unknown borough.
+They pass every cleaning rule and are kept, but they cannot be placed on the map. The loader names that
+zone "Unknown location".
 
 ## Custom algorithm
 
 `pipeline/algorithms.py` implements a min-heap and `top_k_zones` by hand (no `heapq`, `Counter`
 or `sort_values`). It ranks the busiest pickup zones in O(n log k) time and O(k) space.
+Pseudo-code and complexity analysis are in the technical report.
 
 ## Design notes
 
@@ -170,5 +180,8 @@ or `sort_values`). It ranks the busiest pickup zones in O(n log k) time and O(k)
 - **Blank page or "API offline":** open http://127.0.0.1:5000 (not `localhost`, and not the HTML file directly)
   and make sure `python backend\app.py` is still running.
 - **`FileNotFoundError` in the pipeline:** check the `data/` layout shown above and run the commands from the project root.
-- **Shapefile errors:** run `pip install geopandas`.
+- **Shapefile errors:** make sure `pip install -r requirements.txt` finished without errors (it installs geopandas).
 - **Port 5000 in use:** close the other program using it, or change the port on the last line of `backend/app.py`.
+
+
+
