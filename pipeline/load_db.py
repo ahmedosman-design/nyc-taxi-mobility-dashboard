@@ -14,6 +14,7 @@ conn.executescript(open("db/schema.sql").read())
 zones = pd.read_csv("data/taxi_zone_lookup.csv")
 zones["Borough"] = zones["Borough"].fillna("Unknown")
 zones["service_zone"] = zones["service_zone"].fillna("Unknown")
+zones["Zone"] = zones["Zone"].fillna("Unknown location")
 
 boroughs = pd.DataFrame({"name": sorted(zones["Borough"].unique())})
 boroughs["borough_id"] = range(1, len(boroughs) + 1)

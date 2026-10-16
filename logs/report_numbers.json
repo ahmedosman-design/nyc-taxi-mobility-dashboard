@@ -1,0 +1,785 @@
+{
+ "totals": {
+  "trips": 7447044,
+  "first_pickup": "2019-01-01 00:00:00",
+  "last_pickup": "2019-01-31 23:59:58",
+  "max_duration_min": 359.4,
+  "max_speed_mph": 80.0,
+  "max_distance": 98.4,
+  "max_fare": 468.0,
+  "avg_fare": 12.14,
+  "avg_distance": 2.82,
+  "avg_tip_pct_card": 21.61
+ },
+ "zones": 265,
+ "zones_with_polygon": 263,
+ "exclusion_summary": [
+  {
+   "reason": "passenger count not 1-6",
+   "rows": "143693",
+   "pct_of_raw": "1.867"
+  },
+  {
+   "reason": "distance zero or negative",
+   "rows": "48834",
+   "pct_of_raw": "0.6345"
+  },
+  {
+   "reason": "duration over 6 hours",
+   "rows": "20463",
+   "pct_of_raw": "0.2659"
+  },
+  {
+   "reason": "fare per mile over $100",
+   "rows": "10839",
+   "pct_of_raw": "0.1408"
+  },
+  {
+   "reason": "fare zero or negative",
+   "rows": "6720",
+   "pct_of_raw": "0.0873"
+  },
+  {
+   "reason": "dropoff not after pickup",
+   "rows": "6554",
+   "pct_of_raw": "0.0852"
+  },
+  {
+   "reason": "distance under 0.1 miles",
+   "rows": "5870",
+   "pct_of_raw": "0.0763"
+  },
+  {
+   "reason": "speed over 80 mph",
+   "rows": "5462",
+   "pct_of_raw": "0.071"
+  },
+  {
+   "reason": "pickup outside January 2019",
+   "rows": "537",
+   "pct_of_raw": "0.007"
+  },
+  {
+   "reason": "tip over 3x fare",
+   "rows": "475",
+   "pct_of_raw": "0.0062"
+  },
+  {
+   "reason": "invalid rate code",
+   "rows": "91",
+   "pct_of_raw": "0.0012"
+  },
+  {
+   "reason": "distance over 100 miles",
+   "rows": "31",
+   "pct_of_raw": "0.0004"
+  },
+  {
+   "reason": "fare over $500",
+   "rows": "4",
+   "pct_of_raw": "0.0001"
+  }
+ ],
+ "by_borough": [
+  {
+   "borough": "Manhattan",
+   "trips": 6769137,
+   "avg_fare": 10.54,
+   "avg_distance": 2.22
+  },
+  {
+   "borough": "Queens",
+   "trips": 439371,
+   "avg_fare": 35.63,
+   "avg_distance": 11.69
+  },
+  {
+   "borough": "Unknown",
+   "trips": 143083,
+   "avg_fare": 11.68,
+   "avg_distance": 2.6
+  },
+  {
+   "borough": "Brooklyn",
+   "trips": 81199,
+   "avg_fare": 17.0,
+   "avg_distance": 4.55
+  },
+  {
+   "borough": "Bronx",
+   "trips": 13952,
+   "avg_fare": 23.82,
+   "avg_distance": 7.06
+  },
+  {
+   "borough": "Staten Island",
+   "trips": 279,
+   "avg_fare": 43.55,
+   "avg_distance": 13.75
+  },
+  {
+   "borough": "EWR",
+   "trips": 23,
+   "avg_fare": 49.33,
+   "avg_distance": 10.91
+  }
+ ],
+ "by_hour": [
+  {
+   "hour": 0,
+   "trips": 201462,
+   "avg_speed_mph": 16.8,
+   "avg_fare": 12.96
+  },
+  {
+   "hour": 1,
+   "trips": 144752,
+   "avg_speed_mph": 16.5,
+   "avg_fare": 12.29
+  },
+  {
+   "hour": 2,
+   "trips": 105827,
+   "avg_speed_mph": 16.5,
+   "avg_fare": 11.88
+  },
+  {
+   "hour": 3,
+   "trips": 75210,
+   "avg_speed_mph": 17.8,
+   "avg_fare": 12.45
+  },
+  {
+   "hour": 4,
+   "trips": 58441,
+   "avg_speed_mph": 21.0,
+   "avg_fare": 14.51
+  },
+  {
+   "hour": 5,
+   "trips": 71334,
+   "avg_speed_mph": 22.9,
+   "avg_fare": 14.93
+  },
+  {
+   "hour": 6,
+   "trips": 170369,
+   "avg_speed_mph": 17.8,
+   "avg_fare": 12.21
+  },
+  {
+   "hour": 7,
+   "trips": 293799,
+   "avg_speed_mph": 13.5,
+   "avg_fare": 11.74
+  },
+  {
+   "hour": 8,
+   "trips": 361939,
+   "avg_speed_mph": 11.1,
+   "avg_fare": 11.8
+  },
+  {
+   "hour": 9,
+   "trips": 354838,
+   "avg_speed_mph": 10.9,
+   "avg_fare": 11.86
+  },
+  {
+   "hour": 10,
+   "trips": 350245,
+   "avg_speed_mph": 11.4,
+   "avg_fare": 11.89
+  },
+  {
+   "hour": 11,
+   "trips": 363824,
+   "avg_speed_mph": 11.2,
+   "avg_fare": 11.66
+  },
+  {
+   "hour": 12,
+   "trips": 388174,
+   "avg_speed_mph": 11.8,
+   "avg_fare": 11.82
+  },
+  {
+   "hour": 13,
+   "trips": 390485,
+   "avg_speed_mph": 12.4,
+   "avg_fare": 12.15
+  },
+  {
+   "hour": 14,
+   "trips": 418001,
+   "avg_speed_mph": 12.2,
+   "avg_fare": 12.41
+  },
+  {
+   "hour": 15,
+   "trips": 436226,
+   "avg_speed_mph": 11.7,
+   "avg_fare": 12.33
+  },
+  {
+   "hour": 16,
+   "trips": 404572,
+   "avg_speed_mph": 12.1,
+   "avg_fare": 12.57
+  },
+  {
+   "hour": 17,
+   "trips": 452435,
+   "avg_speed_mph": 11.4,
+   "avg_fare": 12.02
+  },
+  {
+   "hour": 18,
+   "trips": 499957,
+   "avg_speed_mph": 11.6,
+   "avg_fare": 11.54
+  },
+  {
+   "hour": 19,
+   "trips": 462026,
+   "avg_speed_mph": 13.0,
+   "avg_fare": 11.53
+  },
+  {
+   "hour": 20,
+   "trips": 411568,
+   "avg_speed_mph": 14.5,
+   "avg_fare": 12.0
+  },
+  {
+   "hour": 21,
+   "trips": 398630,
+   "avg_speed_mph": 15.2,
+   "avg_fare": 12.44
+  },
+  {
+   "hour": 22,
+   "trips": 359077,
+   "avg_speed_mph": 15.5,
+   "avg_fare": 12.63
+  },
+  {
+   "hour": 23,
+   "trips": 273853,
+   "avg_speed_mph": 16.5,
+   "avg_fare": 12.94
+  }
+ ],
+ "days": [
+  {
+   "is_weekend": 0,
+   "days": 23
+  },
+  {
+   "is_weekend": 1,
+   "days": 8
+  }
+ ],
+ "hour_weekend": [
+  {
+   "is_weekend": 0,
+   "hour": 0,
+   "trips": 112122,
+   "avg_speed_mph": 18.8
+  },
+  {
+   "is_weekend": 0,
+   "hour": 1,
+   "trips": 70760,
+   "avg_speed_mph": 18.1
+  },
+  {
+   "is_weekend": 0,
+   "hour": 2,
+   "trips": 47095,
+   "avg_speed_mph": 17.8
+  },
+  {
+   "is_weekend": 0,
+   "hour": 3,
+   "trips": 34468,
+   "avg_speed_mph": 19.0
+  },
+  {
+   "is_weekend": 0,
+   "hour": 4,
+   "trips": 33446,
+   "avg_speed_mph": 22.3
+  },
+  {
+   "is_weekend": 0,
+   "hour": 5,
+   "trips": 58632,
+   "avg_speed_mph": 22.6
+  },
+  {
+   "is_weekend": 0,
+   "hour": 6,
+   "trips": 151722,
+   "avg_speed_mph": 17.1
+  },
+  {
+   "is_weekend": 0,
+   "hour": 7,
+   "trips": 264633,
+   "avg_speed_mph": 12.8
+  },
+  {
+   "is_weekend": 0,
+   "hour": 8,
+   "trips": 316733,
+   "avg_speed_mph": 10.4
+  },
+  {
+   "is_weekend": 0,
+   "hour": 9,
+   "trips": 289736,
+   "avg_speed_mph": 10.1
+  },
+  {
+   "is_weekend": 0,
+   "hour": 10,
+   "trips": 266082,
+   "avg_speed_mph": 10.6
+  },
+  {
+   "is_weekend": 0,
+   "hour": 11,
+   "trips": 268985,
+   "avg_speed_mph": 10.6
+  },
+  {
+   "is_weekend": 0,
+   "hour": 12,
+   "trips": 283994,
+   "avg_speed_mph": 11.4
+  },
+  {
+   "is_weekend": 0,
+   "hour": 13,
+   "trips": 285871,
+   "avg_speed_mph": 12.3
+  },
+  {
+   "is_weekend": 0,
+   "hour": 14,
+   "trips": 313560,
+   "avg_speed_mph": 12.0
+  },
+  {
+   "is_weekend": 0,
+   "hour": 15,
+   "trips": 326635,
+   "avg_speed_mph": 11.4
+  },
+  {
+   "is_weekend": 0,
+   "hour": 16,
+   "trips": 298126,
+   "avg_speed_mph": 11.9
+  },
+  {
+   "is_weekend": 0,
+   "hour": 17,
+   "trips": 344216,
+   "avg_speed_mph": 11.2
+  },
+  {
+   "is_weekend": 0,
+   "hour": 18,
+   "trips": 389505,
+   "avg_speed_mph": 11.5
+  },
+  {
+   "is_weekend": 0,
+   "hour": 19,
+   "trips": 360247,
+   "avg_speed_mph": 13.1
+  },
+  {
+   "is_weekend": 0,
+   "hour": 20,
+   "trips": 325530,
+   "avg_speed_mph": 14.6
+  },
+  {
+   "is_weekend": 0,
+   "hour": 21,
+   "trips": 315717,
+   "avg_speed_mph": 15.3
+  },
+  {
+   "is_weekend": 0,
+   "hour": 22,
+   "trips": 275637,
+   "avg_speed_mph": 15.7
+  },
+  {
+   "is_weekend": 0,
+   "hour": 23,
+   "trips": 201215,
+   "avg_speed_mph": 16.9
+  },
+  {
+   "is_weekend": 1,
+   "hour": 0,
+   "trips": 89340,
+   "avg_speed_mph": 14.2
+  },
+  {
+   "is_weekend": 1,
+   "hour": 1,
+   "trips": 73992,
+   "avg_speed_mph": 14.9
+  },
+  {
+   "is_weekend": 1,
+   "hour": 2,
+   "trips": 58732,
+   "avg_speed_mph": 15.5
+  },
+  {
+   "is_weekend": 1,
+   "hour": 3,
+   "trips": 40742,
+   "avg_speed_mph": 16.7
+  },
+  {
+   "is_weekend": 1,
+   "hour": 4,
+   "trips": 24995,
+   "avg_speed_mph": 19.3
+  },
+  {
+   "is_weekend": 1,
+   "hour": 5,
+   "trips": 12702,
+   "avg_speed_mph": 24.2
+  },
+  {
+   "is_weekend": 1,
+   "hour": 6,
+   "trips": 18647,
+   "avg_speed_mph": 23.8
+  },
+  {
+   "is_weekend": 1,
+   "hour": 7,
+   "trips": 29166,
+   "avg_speed_mph": 21.8
+  },
+  {
+   "is_weekend": 1,
+   "hour": 8,
+   "trips": 45206,
+   "avg_speed_mph": 18.7
+  },
+  {
+   "is_weekend": 1,
+   "hour": 9,
+   "trips": 65102,
+   "avg_speed_mph": 16.5
+  },
+  {
+   "is_weekend": 1,
+   "hour": 10,
+   "trips": 84163,
+   "avg_speed_mph": 14.8
+  },
+  {
+   "is_weekend": 1,
+   "hour": 11,
+   "trips": 94839,
+   "avg_speed_mph": 13.3
+  },
+  {
+   "is_weekend": 1,
+   "hour": 12,
+   "trips": 104180,
+   "avg_speed_mph": 13.1
+  },
+  {
+   "is_weekend": 1,
+   "hour": 13,
+   "trips": 104614,
+   "avg_speed_mph": 12.9
+  },
+  {
+   "is_weekend": 1,
+   "hour": 14,
+   "trips": 104441,
+   "avg_speed_mph": 13.1
+  },
+  {
+   "is_weekend": 1,
+   "hour": 15,
+   "trips": 109591,
+   "avg_speed_mph": 12.9
+  },
+  {
+   "is_weekend": 1,
+   "hour": 16,
+   "trips": 106446,
+   "avg_speed_mph": 12.6
+  },
+  {
+   "is_weekend": 1,
+   "hour": 17,
+   "trips": 108219,
+   "avg_speed_mph": 12.4
+  },
+  {
+   "is_weekend": 1,
+   "hour": 18,
+   "trips": 110452,
+   "avg_speed_mph": 12.3
+  },
+  {
+   "is_weekend": 1,
+   "hour": 19,
+   "trips": 101779,
+   "avg_speed_mph": 13.0
+  },
+  {
+   "is_weekend": 1,
+   "hour": 20,
+   "trips": 86038,
+   "avg_speed_mph": 14.2
+  },
+  {
+   "is_weekend": 1,
+   "hour": 21,
+   "trips": 82913,
+   "avg_speed_mph": 14.6
+  },
+  {
+   "is_weekend": 1,
+   "hour": 22,
+   "trips": 83440,
+   "avg_speed_mph": 15.0
+  },
+  {
+   "is_weekend": 1,
+   "hour": 23,
+   "trips": 72638,
+   "avg_speed_mph": 15.3
+  }
+ ],
+ "tip_by_hour": [
+  {
+   "hour": 0,
+   "card_trips": 142419,
+   "avg_tip_pct": 22.03
+  },
+  {
+   "hour": 1,
+   "card_trips": 101994,
+   "avg_tip_pct": 21.92
+  },
+  {
+   "hour": 2,
+   "card_trips": 73313,
+   "avg_tip_pct": 21.83
+  },
+  {
+   "hour": 3,
+   "card_trips": 49221,
+   "avg_tip_pct": 21.66
+  },
+  {
+   "hour": 4,
+   "card_trips": 33138,
+   "avg_tip_pct": 21.35
+  },
+  {
+   "hour": 5,
+   "card_trips": 44751,
+   "avg_tip_pct": 20.91
+  },
+  {
+   "hour": 6,
+   "card_trips": 117582,
+   "avg_tip_pct": 20.19
+  },
+  {
+   "hour": 7,
+   "card_trips": 220818,
+   "avg_tip_pct": 20.4
+  },
+  {
+   "hour": 8,
+   "card_trips": 278560,
+   "avg_tip_pct": 20.55
+  },
+  {
+   "hour": 9,
+   "card_trips": 262983,
+   "avg_tip_pct": 20.77
+  },
+  {
+   "hour": 10,
+   "card_trips": 246602,
+   "avg_tip_pct": 21.04
+  },
+  {
+   "hour": 11,
+   "card_trips": 251314,
+   "avg_tip_pct": 21.09
+  },
+  {
+   "hour": 12,
+   "card_trips": 267552,
+   "avg_tip_pct": 21.07
+  },
+  {
+   "hour": 13,
+   "card_trips": 268300,
+   "avg_tip_pct": 21.08
+  },
+  {
+   "hour": 14,
+   "card_trips": 287193,
+   "avg_tip_pct": 21.0
+  },
+  {
+   "hour": 15,
+   "card_trips": 301501,
+   "avg_tip_pct": 21.07
+  },
+  {
+   "hour": 16,
+   "card_trips": 283258,
+   "avg_tip_pct": 22.34
+  },
+  {
+   "hour": 17,
+   "card_trips": 327594,
+   "avg_tip_pct": 22.36
+  },
+  {
+   "hour": 18,
+   "card_trips": 371650,
+   "avg_tip_pct": 22.52
+  },
+  {
+   "hour": 19,
+   "card_trips": 347144,
+   "avg_tip_pct": 22.61
+  },
+  {
+   "hour": 20,
+   "card_trips": 312375,
+   "avg_tip_pct": 22.2
+  },
+  {
+   "hour": 21,
+   "card_trips": 300513,
+   "avg_tip_pct": 22.26
+  },
+  {
+   "hour": 22,
+   "card_trips": 268705,
+   "avg_tip_pct": 22.19
+  },
+  {
+   "hour": 23,
+   "card_trips": 198768,
+   "avg_tip_pct": 22.07
+  }
+ ],
+ "top_flows": [
+  {
+   "pickup_zone": null,
+   "dropoff_zone": null,
+   "trips": 127467,
+   "avg_fare": 11.46,
+   "avg_distance": 2.56
+  },
+  {
+   "pickup_zone": "Upper East Side South",
+   "dropoff_zone": "Upper East Side North",
+   "trips": 50221,
+   "avg_fare": 6.26,
+   "avg_distance": 1.04
+  },
+  {
+   "pickup_zone": "Upper East Side North",
+   "dropoff_zone": "Upper East Side North",
+   "trips": 45935,
+   "avg_fare": 4.92,
+   "avg_distance": 0.63
+  },
+  {
+   "pickup_zone": "Upper East Side North",
+   "dropoff_zone": "Upper East Side South",
+   "trips": 42583,
+   "avg_fare": 6.87,
+   "avg_distance": 1.04
+  },
+  {
+   "pickup_zone": "Upper East Side South",
+   "dropoff_zone": "Upper East Side South",
+   "trips": 38277,
+   "avg_fare": 5.26,
+   "avg_distance": 0.65
+  },
+  {
+   "pickup_zone": "Upper West Side South",
+   "dropoff_zone": "Upper West Side North",
+   "trips": 25193,
+   "avg_fare": 5.36,
+   "avg_distance": 0.83
+  },
+  {
+   "pickup_zone": "Upper West Side South",
+   "dropoff_zone": "Lincoln Square East",
+   "trips": 22906,
+   "avg_fare": 5.78,
+   "avg_distance": 0.86
+  },
+  {
+   "pickup_zone": "Lincoln Square East",
+   "dropoff_zone": "Upper West Side South",
+   "trips": 22044,
+   "avg_fare": 5.97,
+   "avg_distance": 0.96
+  },
+  {
+   "pickup_zone": "Upper West Side North",
+   "dropoff_zone": "Upper West Side South",
+   "trips": 21681,
+   "avg_fare": 5.35,
+   "avg_distance": 0.8
+  },
+  {
+   "pickup_zone": "Lenox Hill West",
+   "dropoff_zone": "Upper East Side North",
+   "trips": 20080,
+   "avg_fare": 6.32,
+   "avg_distance": 1.08
+  }
+ ],
+ "payment_mix": [
+  {
+   "payment": "Credit card",
+   "trips": 5357248
+  },
+  {
+   "payment": "Cash",
+   "trips": 2061816
+  },
+  {
+   "payment": "No charge",
+   "trips": 21294
+  },
+  {
+   "payment": "Dispute",
+   "trips": 6686
+  }
+ ]
+}
