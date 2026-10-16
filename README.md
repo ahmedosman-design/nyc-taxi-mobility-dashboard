@@ -4,7 +4,7 @@ A full-stack dashboard for exploring NYC yellow taxi trips (January 2019): a cle
 a normalized SQLite database, a Flask API and an interactive dark-themed web dashboard with a zone map.
 
 - **Team:** Junior Nyamu and Ahmed Osman
-- **Video walkthrough (5 min):** TODO: paste link here
+- **Video walkthrough (5 min):https://1drv.ms/v/c/20ed77863e06ad12/IQBZWkEFIEypRJT9TwRRtp78AbrE_o33pM5gpqmsazKyfhs?e=tv1qBh 
 - **Technical report:** [docs/Technical_Report.pdf](docs/Technical_Report.pdf)
 
 ## System architecture
@@ -182,6 +182,8 @@ Pseudo-code and complexity analysis are in the technical report.
 - **`FileNotFoundError` in the pipeline:** check the `data/` layout shown above and run the commands from the project root.
 - **Shapefile errors:** make sure `pip install -r requirements.txt` finished without errors (it installs geopandas).
 - **Port 5000 in use:** close the other program using it, or change the port on the last line of `backend/app.py`.
+
+
 
 
 
